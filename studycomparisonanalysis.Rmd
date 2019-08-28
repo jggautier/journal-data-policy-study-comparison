@@ -22,7 +22,7 @@ alljournals <- read_delim("studycomparison.tsv", "\t",
 
 # Overlapping journals: Identify the 127 journals in Crosas et al 2018 that are also in one or more of five previous studies (the sixth study, Höffler 2017, is exluded because we could not obtain journal-level data)
 
-```{r data}
+```{r query for overlapping journals}
 overlappingjournals <- sqldf("
   select journaltitle, crosasdiscipline, gleditschhaspolicy, gherghinahaspolicy, zenkmoltgenhaspolicy, sturgeshaspolicy, vlaeminckhaspolicy, crosashaspolicy 
 	from alljournals
@@ -33,7 +33,7 @@ overlappingjournals <- sqldf("
 	  
 # Ignored journals: There are 24 cases in which one or more other studies report that a journal had a data policy when our study found that those journals do not have policies. We are removing these cases from the rest of the analysis
 
-```{r data}
+```{r query for reports of journals having policies where we report none}
 ignoredjournals <- sqldf("
   select journaltitle, crosasdiscipline, gleditschhaspolicy, gherghinahaspolicy, zenkmoltgenhaspolicy, sturgeshaspolicy, vlaeminckhaspolicy, crosashaspolicy
 	from alljournals
@@ -43,7 +43,7 @@ ignoredjournals <- sqldf("
 
 # Remaining journals: Now we're interested only in the remaining 103 journals
 
-```{r data}
+```{r query for journals overlapping journals, excluding ignored journals}
 remainingjournals <- sqldf("
   select *
   from overlappingjournals
@@ -56,7 +56,7 @@ remainingjournals <- sqldf("
 
 # Data policies found: Of the 103 remaining journals, we and one or more of the five other studies found that 56 journals did have data policies
 
-```{r data}
+```{r query for journals we and at least another study found a policy}
 datapoliciesfound <- sqldf("
   select journaltitle, crosasdiscipline, gleditschhaspolicy, gherghinahaspolicy, zenkmoltgenhaspolicy, sturgeshaspolicy, vlaeminckhaspolicy, crosashaspolicy
   from remainingjournals
@@ -67,7 +67,7 @@ datapoliciesfound <- sqldf("
 
 # Data policies not found: Of those 103 journals, there are 20 journals for which none of the studies, including ours, found data policies
 
-```{r data}
+```{r query for journals where no study found a policy}
 datapoliciesnotfound <- sqldf("
   select journaltitle, crosasdiscipline, gleditschhaspolicy, gherghinahaspolicy, zenkmoltgenhaspolicy, sturgeshaspolicy, vlaeminckhaspolicy, crosashaspolicy
 	from remainingjournals
@@ -78,7 +78,7 @@ datapoliciesnotfound <- sqldf("
 
 # New data policies found: Of those 103 journals, we found that 27 journals did have data policies while none of the other five studies found policies
 
-```{r data}
+```{r query for journals where we found a policy and no other study did}
 newdatapoliciesfound <- sqldf("
   select journaltitle, crosasdiscipline, gleditschhaspolicy, gherghinahaspolicy, zenkmoltgenhaspolicy, sturgeshaspolicy, vlaeminckhaspolicy, crosashaspolicy
   from remainingjournals
