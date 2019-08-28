@@ -18,3 +18,11 @@ memisc 0.99.14.9
 
 
 Contact Julian Gautier (juliangautier@g.harvard.edu) with any questions about the analysis
+
+Licensing:
+- studycomparisonanalysis.Rmd is licensed under the GNU General Public License v3.0.
+
+The remaining files are made available under CCO:
+- codebook_2019-08-26.txt	
+- studycomparison-extravariables.tsv
+- studycomparison.tsv
