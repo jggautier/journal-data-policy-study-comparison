@@ -1,0 +1,153 @@
+---
+title: "Study Comparison"
+author: "Julian Gautier"
+date: "September 26, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(sqldf)
+```
+
+# Reading in and preparing the data
+
+```{r data}
+alljournals <- read_delim("studycomparison.tsv", "\t", 
+  escape_double = FALSE, trim_ws = TRUE)
+```
+
+# Overlapping journals: Identify the 127 journals in Crosas et al 2018 that are also in one or more of five previous studies (the sixth study, Höffler 2017, is exluded because we could not obtain journal-level data)
+
+```{r data}
+overlappingjournals <- sqldf("
+  select journaltitle, crosasdiscipline, gleditschhaspolicy, gherghinahaspolicy, zenkmoltgenhaspolicy, sturgeshaspolicy, vlaeminckhaspolicy, crosashaspolicy 
+	from alljournals
+	where crosashaspolicy !='NA' 
+	and (gleditschhaspolicy != 'NA' or gherghinahaspolicy != 'NA' or zenkmoltgenhaspolicy != 'NA' or sturgeshaspolicy != 'NA' or vlaeminckhaspolicy != 'NA')
+	  ")
+```
+	  
+# Ignored journals: There are 24 cases in which one or more other studies report that a journal had a data policy when our study found that those journals do not have policies. We are removing these cases from the rest of the analysis
+
+```{r data}
+ignoredjournals <- sqldf("
+  select journaltitle, crosasdiscipline, gleditschhaspolicy, gherghinahaspolicy, zenkmoltgenhaspolicy, sturgeshaspolicy, vlaeminckhaspolicy, crosashaspolicy
+	from alljournals
+	where crosashaspolicy ='0' and (gleditschhaspolicy = '1' or gherghinahaspolicy = '1' or zenkmoltgenhaspolicy = '1' or sturgeshaspolicy = '1' or vlaeminckhaspolicy = '1')
+      ")
+```
+
+# Remaining journals: Now we're interested only in the remaining 103 journals
+
+```{r data}
+remainingjournals <- sqldf("
+  select *
+  from overlappingjournals
+  where journaltitle not in(
+    select journaltitle
+    from ignoredjournals
+  )
+")
+```
+
+# Data policies found: Of the 103 remaining journals, we and one or more of the five other studies found that 56 journals did have data policies
+
+```{r data}
+datapoliciesfound <- sqldf("
+  select journaltitle, crosasdiscipline, gleditschhaspolicy, gherghinahaspolicy, zenkmoltgenhaspolicy, sturgeshaspolicy, vlaeminckhaspolicy, crosashaspolicy
+  from remainingjournals
+  where crosashaspolicy ='1' 
+  and (gleditschhaspolicy = '1' or gherghinahaspolicy = '1' or zenkmoltgenhaspolicy = '1' or sturgeshaspolicy = '1' or vlaeminckhaspolicy = '1')
+      ")
+```
+
+# Data policies not found: Of those 103 journals, there are 20 journals for which none of the studies, including ours, found data policies
+
+```{r data}
+datapoliciesnotfound <- sqldf("
+  select journaltitle, crosasdiscipline, gleditschhaspolicy, gherghinahaspolicy, zenkmoltgenhaspolicy, sturgeshaspolicy, vlaeminckhaspolicy, crosashaspolicy
+	from remainingjournals
+	where crosashaspolicy ='0' 
+	and (gleditschhaspolicy != ('NA' or '1') or gherghinahaspolicy != ('NA' or '1') or zenkmoltgenhaspolicy != ('NA' or '1') or sturgeshaspolicy != ('NA' or '1') or vlaeminckhaspolicy != ('NA' or '1'))
+  ")
+```
+
+# New data policies found: Of those 103 journals, we found that 27 journals did have data policies while none of the other five studies found policies
+
+```{r data}
+newdatapoliciesfound <- sqldf("
+  select journaltitle, crosasdiscipline, gleditschhaspolicy, gherghinahaspolicy, zenkmoltgenhaspolicy, sturgeshaspolicy, vlaeminckhaspolicy, crosashaspolicy
+  from remainingjournals
+  where journaltitle not in (select journaltitle from datapoliciesfound)
+  and journaltitle not in (select journaltitle from datapoliciesnotfound)
+  ")
+```
+
+# Recode categorical data
+
+```{r recode data for codebook}
+alljournals$gleditschhaspolicy <- as.factor(car::recode(alljournals$gleditschhaspolicy, "1 = 'Yes'; 0 = 'No'"))
+alljournals$gherghinahaspolicy <- as.factor(car::recode(alljournals$gherghinahaspolicy, "1 = 'Yes'; 0 = 'No'"))
+alljournals$zenkmoltgenhaspolicy <- as.factor(car::recode(alljournals$zenkmoltgenhaspolicy, "1 = 'Yes'; 0 = 'No'"))
+alljournals$sturgeshaspolicy <- as.factor(car::recode(alljournals$sturgeshaspolicy, "1 = 'Yes'; 0 = 'No'"))
+alljournals$vlaeminckhaspolicy <- as.factor(car::recode(alljournals$vlaeminckhaspolicy, "1 = 'Yes'; 0 = 'No'"))
+alljournals$crosashaspolicy <- as.factor(car::recode(alljournals$crosashaspolicy, "1 = 'Yes'; 0 = 'No'"))
+
+#Attempts to recode sturgesstrictness and crosasstrictness:
+#alljournals$sturgesstrictness <- car::recode(alljournals$sturgesstrictness, "2 = 'Required'; 1 = 'Encourage';0 = 'No Policy'")
+
+#alljournals$crosasstrictness <- car::recode(alljournals$crosasstrictness, "2 = 'Required'; 1 = 'Encourage';0 = 'No Policy'")
+#alljournals$crosasstrictness <- factor(alljournals$crosasstrictness, levels = c("No Policy", "Encourage", "Required"))
+#alljournals$crosasstrictness <- car::recode(alljournals$crosasstrictness, "c('No Policy', 'Encourage')='Not required'") 
+
+## Converting strings to character variables
+
+alljournals$journaltitle <- as.character(alljournals$journaltitle) 
+alljournals$crosasissn <- as.character(alljournals$crosasissn)
+```
+
+# Generate Codebook
+
+```{r generate codebook}
+library(memisc)
+codebook_data <- as.data.set(alljournals)
+codebook_data <- within(codebook_data, {
+  description(journaltitle) <- "Journal title"
+  description(gleditschhaspolicy) <- "Gleditsch has policy"
+  description(gherghinahaspolicy) <- "Gherghina has policy"
+  description(zenkmoltgenhaspolicy) <- "Zenkmoltgen has policy"
+  description(sturgeshaspolicy) <- "Sturges has policy"
+  description(sturgesstrictness) <- "Sturges strictness"
+  description(vlaeminckhaspolicy) <- "Vlaeminck has policy"
+  description(vlaemincksubject) <- "Vlaeminck subject"
+  description(crosashaspolicy) <- "Crosas has policy"
+  description(crosasdiscipline) <- "Crosas discipline"
+  description(crosasstrictness) <- "Crosas strictness"
+  description(crosasimpactfactor) <- "Crosas impact factor"
+  description(crosaspublisher) <- "Crosas publisher"
+  description(crosasissn) <- "Crosas issn"
+  
+  wording(journaltitle) <- "Title of the journal"
+  wording(gleditschhaspolicy) <- "Does Gleditsch, N., & Metelits, C. 2003 report that the journal has a data policy?"
+  wording(gherghinahaspolicy) <- "Does Gherghina, S., & Katsanidou, A. 2013 report that the journal has a data policy?"
+  wording(zenkmoltgenhaspolicy) <- "Does Zenk-Möltgen, W., & Lepthien, G. 2014 report that the journal has a data policy?"
+  wording(sturgeshaspolicy) <- "Does Sturges et al. 2015 report that the journal has a data policy?"
+  wording(sturgesstrictness) <- "Does Sturges et al. 2015 report that the journal requires data sharing or just mention/encourage it?"
+  wording(vlaeminckhaspolicy) <- "Does Vlaeminck & Herrmann 2015 report that the journal has a data policy?"
+  wording(vlaemincksubject) <- "The discipline that Vlaeminck & Herrmann 2015 assigns to the journal"
+  wording(crosashaspolicy) <- "Does Crosas et al 2018 report that the journal has a data policy?"
+  wording(crosasdiscipline) <- "Discipline the journal is listed under in the Journal Citation Report"
+  wording(crosasstrictness) <- "Does Crosas et al 2018 report that the journal requires data sharing or just mentions/encourages it?"
+  wording(crosasimpactfactor) <- "The journal's 2016 Thomson Reuters (now Claryvate) Impact Factor"
+  wording(crosaspublisher) <- "The journal's publisher. Where a journal is published by a publisher 'on behalf of' a professional organization, we list the publisher, not the association"
+  wording(crosasissn) <- "The journal's International Standard Serial Number (ISSN)"
+})
+
+filename_codebook = paste("codebook_", Sys.Date(), sep = "", ".txt")
+policy_codebook <- codebook(codebook_data)
+Write(policy_codebook, file = filename_codebook)
+```
