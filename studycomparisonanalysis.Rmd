@@ -11,6 +11,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 library(readr)
 library(sqldf)
+library(gsubfn)
+library(proto)
 ```
 
 # Reading in and preparing the data
@@ -97,12 +99,11 @@ alljournals$sturgeshaspolicy <- as.factor(car::recode(alljournals$sturgeshaspoli
 alljournals$vlaeminckhaspolicy <- as.factor(car::recode(alljournals$vlaeminckhaspolicy, "1 = 'Yes'; 0 = 'No'"))
 alljournals$crosashaspolicy <- as.factor(car::recode(alljournals$crosashaspolicy, "1 = 'Yes'; 0 = 'No'"))
 
-#Attempts to recode sturgesstrictness and crosasstrictness:
-#alljournals$sturgesstrictness <- car::recode(alljournals$sturgesstrictness, "2 = 'Required'; 1 = 'Encourage';0 = 'No Policy'")
+alljournals$sturgesstrictness <- car::recode(alljournals$sturgesstrictness, "2 = 'Required'; 1 = 'Encourage';0 = 'No Policy'")
+alljournals$sturgesstrictness <- factor(alljournals$sturgesstrictness, levels = c("No Policy", "Encourage", "Required"))
 
-#alljournals$crosasstrictness <- car::recode(alljournals$crosasstrictness, "2 = 'Required'; 1 = 'Encourage';0 = 'No Policy'")
-#alljournals$crosasstrictness <- factor(alljournals$crosasstrictness, levels = c("No Policy", "Encourage", "Required"))
-#alljournals$crosasstrictness <- car::recode(alljournals$crosasstrictness, "c('No Policy', 'Encourage')='Not required'") 
+alljournals$crosasstrictness <- car::recode(alljournals$crosasstrictness, "2 = 'Required'; 1 = 'Encourage';0 = 'No Policy'")
+alljournals$crosasstrictness <- factor(alljournals$crosasstrictness, levels = c("No Policy", "Encourage", "Required"))
 
 ## Converting strings to character variables
 
@@ -114,6 +115,8 @@ alljournals$crosasissn <- as.character(alljournals$crosasissn)
 
 ```{r generate codebook}
 library(memisc)
+library(lattice)
+library(MASS)
 codebook_data <- as.data.set(alljournals)
 codebook_data <- within(codebook_data, {
   description(journaltitle) <- "Journal title"
