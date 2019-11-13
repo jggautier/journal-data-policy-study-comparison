@@ -1,24 +1,23 @@
 ---
 title: "Study Comparison"
 author: "Julian Gautier"
-date: "September 26, 2019"
+date: "November 13, 2019"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(readr)
 library(sqldf)
-library(gsubfn)
-library(proto)
+library(here)
 ```
 
 # Reading in and preparing the data
 
 ```{r data}
-alljournals <- read_delim("studycomparison.tsv", "\t", 
+alljournals <- read_delim(file=here("studycomparison.tsv"), "\t", 
   escape_double = FALSE, trim_ws = TRUE)
 ```
 
@@ -150,7 +149,7 @@ codebook_data <- within(codebook_data, {
   wording(crosasissn) <- "The journal's International Standard Serial Number (ISSN)"
 })
 
-filename_codebook = paste("codebook_", Sys.Date(), sep = "", ".txt")
+filename_codebook = paste("study_comparison_codebook_", Sys.Date(), sep = "", ".txt")
 policy_codebook <- codebook(codebook_data)
-Write(policy_codebook, file = filename_codebook)
+Write(policy_codebook, file = here(filename_codebook))
 ```
