@@ -12,10 +12,10 @@ Analysis conducted using
 R version 3.6.1 (2019-07-05)
 with the following libraries:
 
+here 0.1
+memisc 0.99.14.9
 readr 1.3.1
 sqldf 0.4-11
-memisc 0.99.14.9
-
 
 Contact Julian Gautier (juliangautier@g.harvard.edu) with any questions about the analysis
 
